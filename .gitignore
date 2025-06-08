@@ -1,0 +1,56 @@
+# Global exclusions - files that should never be tracked
+**/.env
+**/*.env
+**/.env.*
+
+# Temporary files
+**/*.log
+**/*.tmp
+**/*.pid
+**/*.bak
+**/*.swp
+**/*~
+
+# Certificate files
+**/*.pem
+**/*.key
+!**/*.crt
+**/*.csr
+**/*.cert
+
+# Generated files
+**/mosquitto.passwd
+**/vault-data/
+**/pihole-data/
+
+# Docker data directories
+**/data/
+**/volumes/
+**/etc-*/
+
+# OS specific
+**/.DS_Store
+**/Thumbs.db
+**/.directory
+
+# IDE and editors
+**/.idea/
+**/.vscode/
+**/*.sublime-*
+**/*.code-workspace
+**/.project
+**/.settings/
+
+# Node/npm
+**/node_modules/
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+
+# Docker specific
+**/.docker/
+**/docker-compose.override.yml
+
+# Not ignore /data/uxu.pl
+!data/
+!data/uxu.pl/

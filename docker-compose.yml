@@ -1,0 +1,180 @@
+version: '3.8'
+
+services:
+  app_postiz_common_uxu_pl:
+    image: ghcr.io/gitroomhq/postiz-app:v1.48.4
+    container_name: app_postiz_common_uxu_pl
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT}:4200"  # Frontend port
+      - "${BACKEND_PORT}:3000"   # Backend port
+    environment:
+      # === Required Settings ===
+      - DATABASE_URL=postgresql://${DB_USER_POSTGRES}:${DB_PASSWORD_POSTGRES}@db-postgres_postiz_common_uxu_pl:5432/${DB_POSTGRES}
+      - REDIS_URL=redis://default:${REDIS_PASSWORD}@db-redis_postiz_common_uxu_pl:6379
+      - JWT_SECRET=${JWT_SECRET}
+
+      # Frontend/Backend URLs
+      - FRONTEND_URL=${FRONTEND_URL}
+      - NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL}
+      - BACKEND_INTERNAL_URL=${BACKEND_INTERNAL_URL}
+
+      # === Optional Settings ===
+      - STORAGE_PROVIDER=${STORAGE_PROVIDER}
+      - DISABLE_REGISTRATION=${DISABLE_REGISTRATION}
+      - DISABLE_IMAGE_COMPRESSION=${DISABLE_IMAGE_COMPRESSION}
+
+      # === Cloudflare R2 Storage (optional) ===
+      - CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID}
+      - CLOUDFLARE_ACCESS_KEY=${CLOUDFLARE_ACCESS_KEY}
+      - CLOUDFLARE_SECRET_ACCESS_KEY=${CLOUDFLARE_SECRET_ACCESS_KEY}
+      - CLOUDFLARE_BUCKETNAME=${CLOUDFLARE_BUCKETNAME}
+      - CLOUDFLARE_BUCKET_URL=${CLOUDFLARE_BUCKET_URL}
+      - CLOUDFLARE_REGION=${CLOUDFLARE_REGION:-auto}
+
+      # === Email Configuration (optional) ===
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - EMAIL_FROM_ADDRESS=${EMAIL_FROM_ADDRESS}
+      - EMAIL_FROM_NAME=${EMAIL_FROM_NAME}
+
+      # === Social Media APIs ===
+      # X (Twitter)
+      - X_API_KEY=${X_API_KEY}
+      - X_API_SECRET=${X_API_SECRET}
+
+      # LinkedIn
+      - LINKEDIN_CLIENT_ID=${LINKEDIN_CLIENT_ID}
+      - LINKEDIN_CLIENT_SECRET=${LINKEDIN_CLIENT_SECRET}
+
+      # Facebook & Threads
+      - FACEBOOK_APP_ID=${FACEBOOK_APP_ID}
+      - FACEBOOK_APP_SECRET=${FACEBOOK_APP_SECRET}
+      - THREADS_APP_ID=${THREADS_APP_ID}
+      - THREADS_APP_SECRET=${THREADS_APP_SECRET}
+
+      # YouTube
+      - YOUTUBE_CLIENT_ID=${YOUTUBE_CLIENT_ID}
+      - YOUTUBE_CLIENT_SECRET=${YOUTUBE_CLIENT_SECRET}
+
+      # TikTok
+      - TIKTOK_CLIENT_ID=${TIKTOK_CLIENT_ID}
+      - TIKTOK_CLIENT_SECRET=${TIKTOK_CLIENT_SECRET}
+
+      # Pinterest
+      - PINTEREST_CLIENT_ID=${PINTEREST_CLIENT_ID}
+      - PINTEREST_CLIENT_SECRET=${PINTEREST_CLIENT_SECRET}
+
+      # Reddit
+      - REDDIT_CLIENT_ID=${REDDIT_CLIENT_ID}
+      - REDDIT_CLIENT_SECRET=${REDDIT_CLIENT_SECRET}
+
+      # GitHub
+      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
+      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
+
+      # Dribbble
+      - DRIBBBLE_CLIENT_ID=${DRIBBBLE_CLIENT_ID}
+      - DRIBBBLE_CLIENT_SECRET=${DRIBBBLE_CLIENT_SECRET}
+
+      # Discord
+      - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
+      - DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET}
+      - DISCORD_BOT_TOKEN_ID=${DISCORD_BOT_TOKEN_ID}
+
+      # Slack
+      - SLACK_ID=${SLACK_ID}
+      - SLACK_SECRET=${SLACK_SECRET}
+      - SLACK_SIGNING_SECRET=${SLACK_SIGNING_SECRET}
+
+      # Mastodon
+      - MASTODON_URL=${MASTODON_URL}
+      - MASTODON_CLIENT_ID=${MASTODON_CLIENT_ID}
+      - MASTODON_CLIENT_SECRET=${MASTODON_CLIENT_SECRET}
+
+      # Beehiiv
+      - BEEHIIVE_API_KEY=${BEEHIIVE_API_KEY}
+      - BEEHIIVE_PUBLICATION_ID=${BEEHIIVE_PUBLICATION_ID}
+
+      # === AI Configuration ===
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+
+      # === OAuth Settings ===
+      - NEXT_PUBLIC_POSTIZ_OAUTH_DISPLAY_NAME=${NEXT_PUBLIC_POSTIZ_OAUTH_DISPLAY_NAME}
+      - NEXT_PUBLIC_POSTIZ_OAUTH_LOGO_URL=${NEXT_PUBLIC_POSTIZ_OAUTH_LOGO_URL}
+      - POSTIZ_GENERIC_OAUTH=${POSTIZ_GENERIC_OAUTH:-false}
+      - POSTIZ_OAUTH_URL=${POSTIZ_OAUTH_URL}
+      - POSTIZ_OAUTH_AUTH_URL=${POSTIZ_OAUTH_AUTH_URL}
+      - POSTIZ_OAUTH_TOKEN_URL=${POSTIZ_OAUTH_TOKEN_URL}
+      - POSTIZ_OAUTH_USERINFO_URL=${POSTIZ_OAUTH_USERINFO_URL}
+      - POSTIZ_OAUTH_CLIENT_ID=${POSTIZ_OAUTH_CLIENT_ID}
+      - POSTIZ_OAUTH_CLIENT_SECRET=${POSTIZ_OAUTH_CLIENT_SECRET}
+
+    depends_on:
+      db-postgres_postiz_common_uxu_pl:
+        condition: service_healthy
+      db-redis_postiz_common_uxu_pl:
+        condition: service_healthy
+    volumes:
+      - volume_uploads_postiz_common_uxu_pl:/app/uploads
+      - volume_logs_postiz_common_uxu_pl:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+  db-postgres_postiz_common_uxu_pl:
+    image: postgres:15-alpine
+    container_name: db-postgres_postiz_common_uxu_pl
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${DB_POSTGRES}
+      - POSTGRES_USER=${DB_USER_POSTGRES}
+      - POSTGRES_PASSWORD=${DB_PASSWORD_POSTGRES}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    volumes:
+      - volume-postgres_postiz_common_uxu_pl:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    command: >
+      postgres 
+      -c log_statement=all
+      -c log_destination=stderr
+      -c max_connections=200
+      -c shared_preload_libraries=pg_stat_statements
+      -c pg_stat_statements.track=all
+      -c work_mem=16MB
+      -c maintenance_work_mem=512MB
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER_POSTGRES} -d ${DB_POSTGRES}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  db-redis_postiz_common_uxu_pl:
+    image: redis:7.2-alpine
+    container_name: db-redis_postiz_common_uxu_pl
+    restart: unless-stopped
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD}
+      --appendonly yes
+      --maxmemory 1gb
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+    volumes:
+      - volume-redis_postiz_common_uxu_pl:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+volumes:
+  volume-postgres_postiz_common_uxu_pl:
+    driver: local
+  volume-redis_postiz_common_uxu_pl:
+    driver: local
+  volume_uploads_postiz_common_uxu_pl:
+    driver: local
+  volume_logs_postiz_common_uxu_pl:
+    driver: local
